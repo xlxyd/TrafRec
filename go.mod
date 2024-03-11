@@ -1,4 +1,4 @@
-module test2
+module TrafRec
 
 go 1.21.4
 

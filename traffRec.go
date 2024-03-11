@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -40,6 +41,8 @@ var (
 	inputExec     string
 	inputListFile string
 )
+
+var re = regexp.MustCompile(`[^a-zA-Z0-9 ]*`)
 
 // Initialize flags
 func init() {
@@ -88,7 +91,7 @@ func main() {
 
 			log.Println("DEBUG:", "main func: Processing command", command)
 
-			go recordTraff()
+			go recordTraff(command)
 			startCommand(command)
 		}
 
@@ -97,7 +100,7 @@ func main() {
 		log.Println("DEBUG:", "main func: Processing command", inputExec)
 
 		command := getCommandsFromFlag()
-		go recordTraff()
+		go recordTraff(command)
 		startCommand(command)
 
 	} else if inputExec != "" && inputListFile != "" {
@@ -122,6 +125,7 @@ func getCommandsFromList() [][]string {
 
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
+
 		command := strings.Fields(scanner.Text())
 		commandsList = append(commandsList, command)
 	}
@@ -152,12 +156,15 @@ func listInterfaces() {
 	}
 }
 
-func recordTraff() {
+func recordTraff(command []string) {
 
 	//log.Println("DEBUG:", "recordTraff func: Entered function")
 
 	// Open output pcap file and write header
-	f, _ := os.Create(strconv.Itoa(rand.Intn(99999999)+99999999) + ".pcap")
+
+	name := sanitizeFileName(command)
+
+	f, _ := os.Create(name + "_" + strconv.Itoa(rand.Intn(100)) + ".pcap")
 	w := pcapgo.NewWriter(f)
 	w.WriteFileHeader(snaplen, layers.LinkTypeEthernet)
 	defer f.Close()
@@ -226,5 +233,15 @@ func startCommand(command []string) {
 	timer := time.After(time.Duration(timerVar) * time.Second)
 	<-timer
 	//log.Println("DEBUG:", "startCommand func: Recived timer chan. Exiting function")
+
+}
+
+func sanitizeFileName(s []string) string {
+
+	strgOut := strings.Join(s[1:], "")
+
+	strgOut = re.ReplaceAllString(strgOut, ``)
+
+	return strgOut
 
 }
