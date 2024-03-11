@@ -177,6 +177,10 @@ func recordTraff(command []string) {
 	}
 	defer handle.Close()
 
+	if err := handle.SetBPFFilter(bpfFilter); err != nil {
+		log.Fatalf("FATAL: Failed to set BPF filter: %v", err)
+	}
+
 	// Start processing packets
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
 
